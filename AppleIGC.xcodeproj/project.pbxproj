@@ -1,0 +1,410 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		ACB44D062971C969007B92AE /* AppleIGC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D052971C969007B92AE /* AppleIGC.hpp */; };
+		ACB44D082971C969007B92AE /* AppleIGC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ACB44D072971C969007B92AE /* AppleIGC.cpp */; };
+		ACB44D2829723F9B007B92AE /* igc_defines.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D1229723F9A007B92AE /* igc_defines.h */; };
+		ACB44D2929723F9B007B92AE /* igc_base.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D1329723F9A007B92AE /* igc_base.h */; };
+		ACB44D2A29723F9B007B92AE /* igc_mac.c in Sources */ = {isa = PBXBuildFile; fileRef = ACB44D1429723F9A007B92AE /* igc_mac.c */; };
+		ACB44D2B29723F9B007B92AE /* igc_nvm.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D1529723F9A007B92AE /* igc_nvm.h */; };
+		ACB44D3029723F9B007B92AE /* igc_mac.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D1A29723F9A007B92AE /* igc_mac.h */; };
+		ACB44D3329723F9B007B92AE /* igc_i225.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D1D29723F9B007B92AE /* igc_i225.h */; };
+		ACB44D3429723F9B007B92AE /* igc_i225.c in Sources */ = {isa = PBXBuildFile; fileRef = ACB44D1E29723F9B007B92AE /* igc_i225.c */; };
+		ACB44D3529723F9B007B92AE /* igc_base.c in Sources */ = {isa = PBXBuildFile; fileRef = ACB44D1F29723F9B007B92AE /* igc_base.c */; };
+		ACB44D3629723F9B007B92AE /* igc_nvm.c in Sources */ = {isa = PBXBuildFile; fileRef = ACB44D2029723F9B007B92AE /* igc_nvm.c */; };
+		ACB44D3929723F9B007B92AE /* igc_phy.c in Sources */ = {isa = PBXBuildFile; fileRef = ACB44D2329723F9B007B92AE /* igc_phy.c */; };
+		ACB44D3B29723F9B007B92AE /* igc_regs.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D2529723F9B007B92AE /* igc_regs.h */; };
+		ACB44D3C29723F9B007B92AE /* igc_phy.h in Headers */ = {isa = PBXBuildFile; fileRef = ACB44D2629723F9B007B92AE /* igc_phy.h */; };
+		ACC51C6A299C886A007A4634 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ACC51C69299C886A007A4634 /* README.md */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		ACB44D022971C969007B92AE /* AppleIGC.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppleIGC.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACB44D052971C969007B92AE /* AppleIGC.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppleIGC.hpp; sourceTree = "<group>"; };
+		ACB44D072971C969007B92AE /* AppleIGC.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AppleIGC.cpp; sourceTree = "<group>"; };
+		ACB44D092971C969007B92AE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		ACB44D1029723DE4007B92AE /* igc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = igc.h; sourceTree = "<group>"; };
+		ACB44D1129723F2C007B92AE /* igc_hw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = igc_hw.h; sourceTree = "<group>"; };
+		ACB44D1229723F9A007B92AE /* igc_defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_defines.h; sourceTree = "<group>"; };
+		ACB44D1329723F9A007B92AE /* igc_base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_base.h; sourceTree = "<group>"; };
+		ACB44D1429723F9A007B92AE /* igc_mac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = igc_mac.c; sourceTree = "<group>"; };
+		ACB44D1529723F9A007B92AE /* igc_nvm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_nvm.h; sourceTree = "<group>"; };
+		ACB44D1A29723F9A007B92AE /* igc_mac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_mac.h; sourceTree = "<group>"; };
+		ACB44D1D29723F9B007B92AE /* igc_i225.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_i225.h; sourceTree = "<group>"; };
+		ACB44D1E29723F9B007B92AE /* igc_i225.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = igc_i225.c; sourceTree = "<group>"; };
+		ACB44D1F29723F9B007B92AE /* igc_base.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = igc_base.c; sourceTree = "<group>"; };
+		ACB44D2029723F9B007B92AE /* igc_nvm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = igc_nvm.c; sourceTree = "<group>"; };
+		ACB44D2329723F9B007B92AE /* igc_phy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = igc_phy.c; sourceTree = "<group>"; };
+		ACB44D2529723F9B007B92AE /* igc_regs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_regs.h; sourceTree = "<group>"; };
+		ACB44D2629723F9B007B92AE /* igc_phy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igc_phy.h; sourceTree = "<group>"; };
+		ACB44D3F29724155007B92AE /* kcompat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = kcompat.h; sourceTree = "<group>"; };
+		ACC51C69299C886A007A4634 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		ACB44CFF2971C969007B92AE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		ACB44CF82971C969007B92AE = {
+			isa = PBXGroup;
+			children = (
+				ACC51C69299C886A007A4634 /* README.md */,
+				ACB44D042971C969007B92AE /* AppleIGC */,
+				ACB44D032971C969007B92AE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		ACB44D032971C969007B92AE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				ACB44D022971C969007B92AE /* AppleIGC.kext */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ACB44D042971C969007B92AE /* AppleIGC */ = {
+			isa = PBXGroup;
+			children = (
+				ACB44D052971C969007B92AE /* AppleIGC.hpp */,
+				ACB44D072971C969007B92AE /* AppleIGC.cpp */,
+				ACB44D0F29723DD7007B92AE /* igc */,
+				ACB44D092971C969007B92AE /* Info.plist */,
+			);
+			path = AppleIGC;
+			sourceTree = "<group>";
+		};
+		ACB44D0F29723DD7007B92AE /* igc */ = {
+			isa = PBXGroup;
+			children = (
+				ACB44D1029723DE4007B92AE /* igc.h */,
+				ACB44D1F29723F9B007B92AE /* igc_base.c */,
+				ACB44D1329723F9A007B92AE /* igc_base.h */,
+				ACB44D1229723F9A007B92AE /* igc_defines.h */,
+				ACB44D1E29723F9B007B92AE /* igc_i225.c */,
+				ACB44D1D29723F9B007B92AE /* igc_i225.h */,
+				ACB44D1429723F9A007B92AE /* igc_mac.c */,
+				ACB44D1A29723F9A007B92AE /* igc_mac.h */,
+				ACB44D2029723F9B007B92AE /* igc_nvm.c */,
+				ACB44D1529723F9A007B92AE /* igc_nvm.h */,
+				ACB44D2329723F9B007B92AE /* igc_phy.c */,
+				ACB44D2629723F9B007B92AE /* igc_phy.h */,
+				ACB44D2529723F9B007B92AE /* igc_regs.h */,
+				ACB44D1129723F2C007B92AE /* igc_hw.h */,
+				ACB44D3F29724155007B92AE /* kcompat.h */,
+			);
+			path = igc;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		ACB44CFD2971C969007B92AE /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACB44D3C29723F9B007B92AE /* igc_phy.h in Headers */,
+				ACB44D062971C969007B92AE /* AppleIGC.hpp in Headers */,
+				ACB44D3029723F9B007B92AE /* igc_mac.h in Headers */,
+				ACB44D3329723F9B007B92AE /* igc_i225.h in Headers */,
+				ACB44D2829723F9B007B92AE /* igc_defines.h in Headers */,
+				ACB44D2B29723F9B007B92AE /* igc_nvm.h in Headers */,
+				ACB44D2929723F9B007B92AE /* igc_base.h in Headers */,
+				ACB44D3B29723F9B007B92AE /* igc_regs.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		ACB44D012971C969007B92AE /* AppleIGC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ACB44D0C2971C969007B92AE /* Build configuration list for PBXNativeTarget "AppleIGC" */;
+			buildPhases = (
+				ACB44CFD2971C969007B92AE /* Headers */,
+				ACB44CFE2971C969007B92AE /* Sources */,
+				ACB44CFF2971C969007B92AE /* Frameworks */,
+				ACB44D002971C969007B92AE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AppleIGC;
+			productName = AppleIGC;
+			productReference = ACB44D022971C969007B92AE /* AppleIGC.kext */;
+			productType = "com.apple.product-type.kernel-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		ACB44CF92971C969007B92AE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1420;
+				TargetAttributes = {
+					ACB44D012971C969007B92AE = {
+						CreatedOnToolsVersion = 14.2;
+					};
+				};
+			};
+			buildConfigurationList = ACB44CFC2971C969007B92AE /* Build configuration list for PBXProject "AppleIGC" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = ACB44CF82971C969007B92AE;
+			productRefGroup = ACB44D032971C969007B92AE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				ACB44D012971C969007B92AE /* AppleIGC */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		ACB44D002971C969007B92AE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACC51C6A299C886A007A4634 /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ACB44CFE2971C969007B92AE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACB44D3529723F9B007B92AE /* igc_base.c in Sources */,
+				ACB44D082971C969007B92AE /* AppleIGC.cpp in Sources */,
+				ACB44D2A29723F9B007B92AE /* igc_mac.c in Sources */,
+				ACB44D3929723F9B007B92AE /* igc_phy.c in Sources */,
+				ACB44D3429723F9B007B92AE /* igc_i225.c in Sources */,
+				ACB44D3629723F9B007B92AE /* igc_nvm.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		ACB44D0A2971C969007B92AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.6;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		ACB44D0B2971C969007B92AE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.6;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		ACB44D0D2971C969007B92AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				EXCLUDED_ARCHS = arm64e;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					__PRIVATE_SPI__,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppleIGC/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MARKETING_VERSION = 1.0;
+				MODULE_NAME = com.sxx.AppleIGC;
+				MODULE_VERSION = 1.0.0d1;
+				OTHER_CFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.sxx.AppleIGC;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Debug;
+		};
+		ACB44D0E2971C969007B92AE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				EXCLUDED_ARCHS = arm64e;
+				GCC_PREPROCESSOR_DEFINITIONS = __PRIVATE_SPI__;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppleIGC/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MARKETING_VERSION = 1.0;
+				MODULE_NAME = com.sxx.AppleIGC;
+				MODULE_VERSION = 1.0.0d1;
+				OTHER_CFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.sxx.AppleIGC;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		ACB44CFC2971C969007B92AE /* Build configuration list for PBXProject "AppleIGC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACB44D0A2971C969007B92AE /* Debug */,
+				ACB44D0B2971C969007B92AE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ACB44D0C2971C969007B92AE /* Build configuration list for PBXNativeTarget "AppleIGC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACB44D0D2971C969007B92AE /* Debug */,
+				ACB44D0E2971C969007B92AE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = ACB44CF92971C969007B92AE /* Project object */;
+}

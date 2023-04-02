@@ -2,38 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>${PRODUCT_NAME}</string>
-	<key>CFBundlePackageType</key>
-	<string>KEXT</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>IOKitPersonalities</key>
 	<dict>
 		<key>i225</key>
 		<dict>
-			<key>IOProbeScore</key>
-			<integer>4000</integer>
 			<key>CFBundleIdentifier</key>
 			<string>com.sxx.${PRODUCT_NAME}</string>
 			<key>IOClass</key>
 			<string>${PRODUCT_NAME}</string>
 			<key>IOPCIMatch</key>
 			<string>0x15f28086 0x15f38086 0x15f88086</string>
+			<key>IOProbeScore</key>
+			<integer>4000</integer>
 			<key>IOProviderClass</key>
 			<string>IOPCIDevice</string>
 			<key>NETIF_F_TSO</key>
@@ -41,14 +25,14 @@
 		</dict>
 		<key>i226</key>
 		<dict>
-			<key>IOProbeScore</key>
-			<integer>4000</integer>
 			<key>CFBundleIdentifier</key>
 			<string>com.sxx.${PRODUCT_NAME}</string>
 			<key>IOClass</key>
 			<string>${PRODUCT_NAME}</string>
 			<key>IOPCIMatch</key>
 			<string>0x125c8086 0x125b8086 0x125d8086 0x31028086</string>
+			<key>IOProbeScore</key>
+			<integer>4000</integer>
 			<key>IOProviderClass</key>
 			<string>IOPCIDevice</string>
 			<key>NETIF_F_TSO</key>

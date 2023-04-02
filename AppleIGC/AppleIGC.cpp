@@ -3313,7 +3313,7 @@ static int igc_uc_unsync(IOEthernetController *netdev, const unsigned char *addr
  * responsible for configuring the hardware for proper unicast, multicast,
  * promiscuous mode, and all-multi behavior.
  */
-static void igc_set_rx_mode(IOEthernetController *netdev)
+static void igc_set_rx_mode(AppleIGC *netdev)
 {
     struct igc_adapter *adapter = netdev_priv(netdev);
     struct igc_hw *hw = &adapter->hw;
@@ -3332,8 +3332,8 @@ static void igc_set_rx_mode(IOEthernetController *netdev)
              * that we can at least receive multicast traffic
              */
             
-            //count = igc_write_mc_addr_list(netdev);
-            //if (count < 0)
+            count = netdev->getMulticastListCount();
+            if (count < 0)
                 rctl |= IGC_RCTL_MPE;
         }
     }
@@ -3354,7 +3354,7 @@ static void igc_set_rx_mode(IOEthernetController *netdev)
 //    if (adapter->max_frame_size <= IGC_MAX_FRAME_BUILD_SKB)
 //        rlpml = IGC_MAX_FRAME_BUILD_SKB;
 //#endif
-    wr32(IGC_RLPML, adapter->max_frame_size);
+    wr32(IGC_RLPML, rlpml);
 }
 
 /**
@@ -5777,6 +5777,8 @@ bool AppleIGC::init(OSDictionary *properties) {
     watchdogSource = NULL;
     resetSource = NULL;
     dmaErrSource = NULL;
+    
+    multicastListCount = 0;
 
     netif = NULL;
 #ifndef __PRIVATE_SPI__
@@ -7005,7 +7007,7 @@ IOReturn AppleIGC::setMulticastMode(bool active)
     if(active)
         iff_flags |= IFF_ALLMULTI;
     else
-        iff_flags &= IFF_ALLMULTI;
+        iff_flags &= ~IFF_ALLMULTI;
     
     igc_set_rx_mode(this);
     return kIOReturnSuccess;
@@ -7018,10 +7020,12 @@ IOReturn AppleIGC::setMulticastList(IOEthernetAddress * addrs, UInt32 count)
     struct igc_hw *hw = &adapter->hw;
 
     if (!count) {
+        this->multicastListCount = 0;
         igc_update_mc_addr_list(hw, NULL, 0);
         return 0;
     }
     
+    this->multicastListCount = count;
     /* The shared function expects a packed array of only addresses. */
     igc_update_mc_addr_list(hw, (u8*)addrs, count);
     

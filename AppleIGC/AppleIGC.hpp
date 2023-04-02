@@ -139,6 +139,8 @@ private:
     IOMemoryMap * csrPCIAddress;
     
     IOMbufNaturalMemoryCursor * txMbufCursor;
+    
+    int multicastListCount;
 
     bool enabledForNetif;
     bool bSuspended;
@@ -175,6 +177,7 @@ public:
     igc_adapter* adapter(){ return &priv_adapter; }
     IONetworkStats* getNetStats(){ return netStats; }
     IOEthernetStats* getEtherStats() { return etherStats; }
+    int getMulticastListCount() const { return multicastListCount; }
     //dma_addr_t mapSingle( mbuf_t );
     void receive(mbuf_t skb );
     void flushInputQueue();

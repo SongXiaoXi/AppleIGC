@@ -7,5 +7,13 @@ In theory, it will have better performance than the AppleEthernetE1000 driver im
 Only test on macOS Monterey 12.6.1 with Intel i226-V for days. 
 It should work on other versions macOS and all igc compliant devices(i225, i226 and others) whose PCI id may not be filled in the IOPCIMatch. (You can fill it out yourself to test.) Use at your own risk.
 
+## Features
+- TCP checksum
+- TSO and TSO6
+- Others, such as hardware stripping and stuffing of 802.1q VLAN tags and energy efficient ethernet, have not yet been tested.
+
 ## Known Issues
 - Only work in auto-negotiation mode. "Force mode currently not supported." (from `igc_ethtool_set_link_ksettings()` in igc_ethtool.c)
+
+## Credit
+- [AppleIGB](https://github.com/Shaneee/AppleIGB)

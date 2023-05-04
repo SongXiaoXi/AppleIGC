@@ -6926,6 +6926,8 @@ void AppleIGC::intelRestart() {
 
 IOReturn AppleIGC::selectMedium(const IONetworkMedium * medium)
 {
+    // force mode is not supported
+    return kIOReturnUnsupported;
     pr_err("selectMedium()===>\n");
 
     if (medium) {
@@ -7466,11 +7468,8 @@ bool AppleIGC::setupMediumDict()
 
                 if (!medium)
                     goto error1;
-                // igc do not support force mode.
-                if (i == MEDIUM_INDEX_AUTO) {
-                    result = IONetworkMedium::addMedium(mediumDict, medium);
-                    medium->release();
-                }
+                result = IONetworkMedium::addMedium(mediumDict, medium);
+                medium->release();
 
                 if (!result)
                     goto error1;

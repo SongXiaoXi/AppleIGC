@@ -1314,12 +1314,6 @@ static int igc_tx_map(struct igc_ring *tx_ring,
     u16 i = tx_ring->next_to_use;
 
     UInt32 k,count;
-    //struct IOPhysicalSegment vec[MAX_SKB_FRAGS];
-    //frags = tx_ring->netdev->txCursor()->getPhysicalSegmentsWithCoalesce(skb, vec, MAX_SKB_FRAGS);
-    //if(frags == 0) {
-    //    pr_err("No frags by getPhysicalSegmentsWithCoalesce()\n");
-    //    return FALSE;
-    //}
 
     // check real count
     count = 0;
@@ -1924,7 +1918,6 @@ static void igc_add_rx_frag(struct igc_ring *rx_ring,
                       va, MBUF_WAITOK))) {
         pr_err("Unexpected mbuf_copyback()\n");
     }
-    //mbuf_pkthdr_setlen(skb, orig_len + size);
 #else
     unsigned int truesize;
 
@@ -2402,21 +2395,9 @@ static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
 #endif
 
     /* pull page into skb */
-#ifdef    __APPLE__
-    igc_add_rx_frag(rx_ring, rx_buffer, skb, /*le16_to_cpu(rx_desc->wb.upper.length)*/size);
+    igc_add_rx_frag(rx_ring, rx_buffer, skb, size);
     igc_reuse_rx_page(rx_ring, rx_buffer);
 
-#else
-    if (igb_add_rx_frag(rx_ring, rx_buffer, rx_desc, skb)) {
-        /* hand second half of page back to the ring */
-        igb_reuse_rx_page(rx_ring, rx_buffer);
-    } else {
-        /* we are not reusing the buffer so unmap it */
-        dma_unmap_page(rx_ring->dev, rx_buffer->dma,
-                       PAGE_SIZE, DMA_FROM_DEVICE);
-    }
-    
-#endif
     /* clear contents of rx_buffer */
     rx_buffer->page = NULL;
 
@@ -2430,11 +2411,9 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
     struct igc_ring *rx_ring = q_vector->rx.ring;
     struct sk_buff *skb = rx_ring->skb;
     u16 cleaned_count = igc_desc_unused(rx_ring);
-    int /*xdp_status = 0, */rx_buffer_pgcnt;
 
     while (likely(total_packets < budget)) {
         union igc_adv_rx_desc *rx_desc;
-        struct igc_rx_buffer *rx_buffer;
         unsigned int size;//, truesize;
         //ktime_t timestamp = 0;
         //struct xdp_buff xdp;
@@ -2458,19 +2437,14 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
          */
         dma_rmb();
 
-        rx_buffer = igc_get_rx_buffer(rx_ring, size, &rx_buffer_pgcnt);
-
-        if (!skb) {
-            skb = igc_fetch_rx_buffer(rx_ring, rx_desc, skb, size);
-        }
+        skb = igc_fetch_rx_buffer(rx_ring, rx_desc, skb, size);
 
         /* exit if we failed to retrieve a buffer */
         if (!skb) {
             rx_ring->rx_stats.alloc_failed++;
             break;
         }
-
-        igc_put_rx_buffer(rx_ring, rx_buffer, rx_buffer_pgcnt);
+        
         cleaned_count++;
 
         /* fetch next buffer in frame if non-eop */
@@ -4288,7 +4262,6 @@ static int igc_sw_init(struct igc_adapter *adapter)
 void igc_up(struct igc_adapter *adapter)
 {
     struct igc_hw *hw = &adapter->hw;
-    int i = 0;
 
     /* hardware has been reset, we need to reload some things */
     igc_configure(adapter);
@@ -6176,12 +6149,11 @@ IOReturn AppleIGC::enable(IONetworkInterface *netif) {
 IOReturn AppleIGC::disable(IONetworkInterface *netif) {
     if (enabledForNetif) {
         enabledForNetif = false;
-        stopTxQueue();
 #ifndef __PRIVATE_SPI__
+        stopTxQueue();
         transmitQueue->setCapacity(0);
 #else
-        netif->stopOutputThread();
-        netif->flushOutputQueue();
+        stopTxQueue();
 #endif
         watchdogSource->cancelTimeout();
         interruptSource->disable();
@@ -6553,7 +6525,7 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
         u8 hdr_len = 0;
         
         struct IOPhysicalSegment vec[MAX_SKB_FRAGS];
-        UInt32 frags = tx_ring->netdev->txCursor()->getPhysicalSegmentsWithCoalesce(skb, vec, MAX_SKB_FRAGS);
+        UInt32 frags = txMbufCursor->getPhysicalSegmentsWithCoalesce(skb, vec, MAX_SKB_FRAGS);
         if(frags == 0) {
             pr_debug("No frags by getPhysicalSegmentsWithCoalesce()\n");
             break;
@@ -7291,7 +7263,6 @@ IOReturn AppleIGC::getMinPacketSize (UInt32 *minSize) const {
 
 
 IOReturn AppleIGC::setMaxPacketSize (UInt32 maxSize){
-    pr_err("AppleIGC::setMaxPacketSize(%d)\n",(int)maxSize);
     UInt32 newMtu = maxSize  - (ETH_HLEN + ETH_FCS_LEN);
     if(newMtu != _mtu){
         _mtu = newMtu;
@@ -7376,6 +7347,8 @@ void AppleIGC::stopTxQueue()
     transmitQueue->stop();
     transmitQueue->flush();
 #endif
+    netif->stopOutputThread();
+    netif->flushOutputQueue();
     RELEASE(txMbufCursor);
 }
 

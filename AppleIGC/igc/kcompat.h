@@ -124,7 +124,11 @@ static inline __u16 __le16_to_cpup(const __le16 *p)
 #endif
 #define ALIGN(x,a) (((x)+(a)-1)&~((a)-1))
 
-#define BITS_PER_LONG   32
+#if __LP64__
+#define BITS_PER_LONG 64
+#elif __LP32__
+#define BITS_PER_LONG 32
+#endif
 
 #define BITS_TO_LONGS(bits) \
 (((bits)+BITS_PER_LONG-1)/BITS_PER_LONG)
@@ -858,10 +862,18 @@ static inline void clear_bit(int nr, volatile unsigned long * addr) {
     *addr &= ~(1 << nr);
 }
 
+
+#define BIT_MASK(nr)        ((1ul) << ((nr) % BITS_PER_LONG))
+#define BIT_WORD(nr)        ((nr) / BITS_PER_LONG)
+
 static inline int test_and_set_bit(int nr, volatile unsigned long * addr) {
-    int rc = test_bit(nr,addr);
-    set_bit(nr,addr);
-    return rc;
+    unsigned long mask = BIT_MASK(nr);
+    long old;
+
+    addr += BIT_WORD(nr);
+
+    old = __sync_fetch_and_or(addr, mask);
+    return !!(old & mask);
 }
 
 

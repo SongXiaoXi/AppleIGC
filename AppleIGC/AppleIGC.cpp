@@ -2407,9 +2407,9 @@ static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
 static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
 {
     unsigned int total_bytes = 0, total_packets = 0;
-    //struct igc_adapter *adapter = q_vector->adapter;
     struct igc_ring *rx_ring = q_vector->rx.ring;
     struct sk_buff *skb = rx_ring->skb;
+    AppleIGC *netdev = q_vector->adapter->netdev;
     u16 cleaned_count = igc_desc_unused(rx_ring);
 
     while (likely(total_packets < budget)) {
@@ -2467,7 +2467,7 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
         /* populate checksum, VLAN, and protocol */
         igc_process_skb_fields(rx_ring, rx_desc, skb);
 #ifdef HAVE_VLAN_RX_REGISTER
-        q_vector->adapter->netdev->receive(skb);
+        netdev->receive(skb);
 #else
         napi_gro_receive(&q_vector->napi, skb);
 #endif
@@ -2479,7 +2479,7 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
         total_packets++;
     }
     if (total_packets != 0) {
-        q_vector->adapter->netdev->flushInputQueue();
+        netdev->flushInputQueue();
     }
 
     /* place incomplete frames back on ring for completion */
@@ -2563,7 +2563,7 @@ static bool igc_clean_tx_irq(struct igc_q_vector *q_vector, int napi_budget)
         case IGC_TX_BUFFER_TYPE_SKB:
             //napi_consume_skb(tx_buffer->skb, napi_budget);
             //igc_unmap_tx_buffer(tx_ring->, tx_buffer);
-                dma_unmap_len_set(tx_buffer, len, 0);
+            dma_unmap_len_set(tx_buffer, len, 0);
             break;
         default:
             pr_err("Unknown Tx buffer type %d\n", tx_buffer->type);
@@ -2673,6 +2673,10 @@ static bool igc_clean_tx_irq(struct igc_q_vector *q_vector, int napi_budget)
             !(test_bit(__IGC_DOWN, &adapter->state))) {
             netif_wake_queue(tx_ring->netdev);
             tx_ring->tx_stats.restart_queue++;
+        }
+#else
+        if (!test_bit(__IGC_DOWN, &adapter->state)) {
+            netif_wake_queue(tx_ring->netdev);
         }
 #endif
 #else
@@ -3920,12 +3924,12 @@ static void igc_ring_irq_enable(struct igc_q_vector *q_vector)
             igc_update_ring_itr(q_vector);
     }
 
-    //if (!test_bit(__IGC_DOWN, &adapter->state)) {
+    if (!test_bit(__IGC_DOWN, &adapter->state)) {
         //if (adapter->msix_entries)
         //    wr32(IGC_EIMS, q_vector->eims_value);
         //else
             igc_irq_enable(adapter);
-    //}
+    }
 }
 
 static void igc_add_ring(struct igc_ring *ring,
@@ -6154,6 +6158,7 @@ IOReturn AppleIGC::disable(IONetworkInterface *netif) {
         transmitQueue->setCapacity(0);
 #else
         stopTxQueue();
+        RELEASE(txMbufCursor);
 #endif
         watchdogSource->cancelTimeout();
         interruptSource->disable();
@@ -6517,9 +6522,8 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
 {
     struct igc_adapter *adapter = &priv_adapter;
     struct igc_ring *tx_ring = igc_tx_queue_mapping(adapter, skb);
-    txNumFreeDesc = igc_desc_unused(tx_ring);
     mbuf_t skb = NULL;
-    while (igc_desc_unused(tx_ring) >= (MAX_SKB_FRAGS + 3) && kIOReturnSuccess == interface->dequeueOutputPackets(1, &skb, NULL, NULL, NULL)) {
+    while ((txNumFreeDesc = igc_desc_unused(tx_ring)) >= (MAX_SKB_FRAGS + 3) && kIOReturnSuccess == interface->dequeueOutputPackets(1, &skb, NULL, NULL, NULL)) {
         int tso = 0;
         u32 tx_flags = 0;
         u8 hdr_len = 0;
@@ -6572,8 +6576,11 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
             break;
         }
     }
-error:
-    return kIOReturnNoResources;
+    if ((txNumFreeDesc = igc_desc_unused(tx_ring)) >= (MAX_SKB_FRAGS + 3)) {
+        return kIOReturnSuccess;
+    } else {
+        return kIOReturnNoResources;
+    }
 }
 #endif
 
@@ -7333,8 +7340,8 @@ void AppleIGC::startTxQueue()
     }
     stalled = false;
 #else
-    if (!txMbufCursor) {
-        txMbufCursor = IOMbufNaturalMemoryCursor::withSpecification(_mtu + ETH_HLEN + ETH_FCS_LEN + VLAN_HLEN, MAX_SKB_FRAGS);
+    if (txMbufCursor == NULL) {
+        txMbufCursor = IOMbufNaturalMemoryCursor::withSpecification(0x4000, MAX_SKB_FRAGS);
     }
     netif->signalOutputThread();
 #endif
@@ -7349,7 +7356,6 @@ void AppleIGC::stopTxQueue()
 #endif
     netif->stopOutputThread();
     netif->flushOutputQueue();
-    RELEASE(txMbufCursor);
 }
 
 void AppleIGC::rxChecksumOK( mbuf_t skb, UInt32 flag )

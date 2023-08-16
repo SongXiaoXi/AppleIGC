@@ -1177,15 +1177,20 @@ static void igc_tx_csum(struct igc_ring *tx_ring, struct igc_tx_buffer *first,
         
         /* Set the ether header length */
         packet = (u8*)mbuf_data(skb) + ehdrlen;
+        size_t len = mbuf_len(skb);
 
         if(checksumDemanded & DEMAND_IPv6){        // IPv6
             struct ip6_hdr* ip6 = (struct ip6_hdr*)packet;
             u_int8_t nexthdr;
             do {
-                nexthdr = ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+                if ((u8*)&ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt - packet < len) {
+                    nexthdr = ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+                } else {
+                    break;
+                }
                 ip6++;
-            } while(nexthdr != IPPROTO_TCP && nexthdr != IPPROTO_UDP);
-            ip_hlen = (u8*)ip6 - packet;
+            } while(nexthdr != IPPROTO_TCP && nexthdr != IPPROTO_UDP && nexthdr != IPPROTO_ICMPV6);
+            ip_hlen = (int)((u8*)ip6 - packet);
         } else {
             struct ip *ip = (struct ip *)packet;
             ip_hlen = ip->ip_hl << 2;

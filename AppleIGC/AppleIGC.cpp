@@ -576,7 +576,9 @@ static void igc_clean_rx_ring_page_shared(struct igc_ring *rx_ring)
     u16 i = rx_ring->next_to_clean;
 
 #ifdef __APPLE__
-    rx_ring->netdev->freePacket(rx_ring->skb);
+    if (rx_ring->skb) {
+        rx_ring->netdev->freePacket(rx_ring->skb);
+    }
 #else
     dev_kfree_skb(rx_ring->skb);
 #endif
@@ -2558,7 +2560,9 @@ static bool igc_clean_tx_irq(struct igc_q_vector *q_vector, int napi_budget)
         total_packets += tx_buffer->gso_segs;
         
         /* free the skb */
-        adapter->netdev->freePacket(tx_buffer->skb);
+        if (tx_buffer->skb) {
+            adapter->netdev->freePacket(tx_buffer->skb);
+        }
         tx_buffer->skb = NULL;
         
         switch (tx_buffer->type) {

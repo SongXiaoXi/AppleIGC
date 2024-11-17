@@ -94,7 +94,7 @@ static void kfree(void* p, size_t size)
 
 static void* vzalloc(size_t size)
 {
-    void* p = IOMallocPageable(size, PAGE_SIZE);
+    void* p = IOMallocAligned(size, PAGE_SIZE);
     if(p){
         bzero(p, size);
     } else {
@@ -104,7 +104,7 @@ static void* vzalloc(size_t size)
 }
 
 static void vfree(void* p, size_t size) {
-    IOFreePageable(p, size);
+    IOFreeAligned(p, size);
 }
 
 static void netif_carrier_off(IOEthernetController* netdev){

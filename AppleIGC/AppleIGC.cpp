@@ -55,13 +55,31 @@ static inline struct ip6_hdr* ip6_hdr(mbuf_t skb)
     return (struct ip6_hdr*)((u8*)mbuf_data(skb) + ETHER_HDR_LEN);
 }
 
-static inline struct tcphdr* tcp6_hdr(mbuf_t skb)
-{
+static inline struct tcphdr* tcp6_hdr(mbuf_t skb) {
     struct ip6_hdr* ip6 = ip6_hdr(skb);
-    while(ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt != IPPROTO_TCP){
-        ip6++;
+    if (!ip6) return NULL;
+    
+    size_t pkt_len = mbuf_len(skb);
+    size_t offset = sizeof(struct ip6_hdr);
+    uint8_t next_header = ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    
+    while (next_header != IPPROTO_TCP) {
+        if (offset + sizeof(struct ip6_ext) > pkt_len) {
+            return NULL;
+        }
+        struct ip6_ext* ext = (struct ip6_ext*)((uint8_t*)ip6 + offset);
+        next_header = ext->ip6e_nxt;
+        offset += (ext->ip6e_len + 1) * 8;
+
+        if (offset > pkt_len) {
+            return NULL;
+        }
     }
-    return (struct tcphdr*)(ip6+1);
+    
+    if (offset + sizeof(struct tcphdr) > pkt_len) {
+        return NULL;
+    }
+    return (struct tcphdr*)((uint8_t*)ip6 + offset);
 }
 
 static void* kzalloc(size_t size)
@@ -1209,7 +1227,9 @@ static void igc_tx_csum(struct igc_ring *tx_ring, struct igc_tx_buffer *first,
         } else if(checksumDemanded & CSUM_TCPIPv6){
             type_tucmd |= IGC_ADVTXD_TUCMD_L4T_TCP;
             struct tcphdr* tcph = tcp6_hdr(skb);
-            mss_l4len_idx = (tcph->th_off << 2) << IGC_ADVTXD_L4LEN_SHIFT;
+            if (tcph != NULL) {
+                mss_l4len_idx = (tcph->th_off << 2) << IGC_ADVTXD_L4LEN_SHIFT;
+            }
         } else if(checksumDemanded & (IONetworkController::kChecksumUDP|CSUM_UDPIPv6)){
             mss_l4len_idx = sizeof(struct udphdr) << IGC_ADVTXD_L4LEN_SHIFT;
         }
@@ -1591,6 +1611,9 @@ static int igc_tso(struct igc_ring *tx_ring,
     } else {
         struct ip6_hdr *iph = ip6_hdr(skb);
         tcph = tcp6_hdr(skb);
+        if (tcph == NULL) {
+            return 0;
+        }
         ip_len = (int)((u8*)tcph - (u8*)iph);
         iph->ip6_ctlun.ip6_un1.ip6_un1_plen = 0;
         tcph->th_sum = in_pseudo6(iph, IPPROTO_TCP, 0);

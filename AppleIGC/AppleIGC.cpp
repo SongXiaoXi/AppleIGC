@@ -31,6 +31,8 @@ extern "C" {
 #define NETIF_F_TSO
 #define NETIF_F_TSO6
 
+#define M_PKTHDR        0x0002
+
 /* IPv6 flags are not defined in 10.6 headers. */
 enum {
     CSUM_TCPIPv6             = 0x0020,
@@ -50,36 +52,64 @@ static inline struct tcphdr* tcp_hdr(mbuf_t skb)
     return (struct tcphdr*)((u8*)iph + (iph->ip_hl << 2));
 }
 
-static inline struct ip6_hdr* ip6_hdr(mbuf_t skb)
-{
-    return (struct ip6_hdr*)((u8*)mbuf_data(skb) + ETHER_HDR_LEN);
+static inline struct ip6_hdr* ip6_hdr(mbuf_t skb) {
+    uint8_t *data = (uint8_t*)mbuf_data(skb);
+    size_t pkt_len = mbuf_len(skb);
+
+    if (pkt_len < ETHER_HDR_LEN + sizeof(struct ip6_hdr))
+        return NULL;
+
+    return (struct ip6_hdr*)(data + ETHER_HDR_LEN);
 }
 
 static inline struct tcphdr* tcp6_hdr(mbuf_t skb) {
-    struct ip6_hdr* ip6 = ip6_hdr(skb);
-    if (!ip6) return NULL;
-    
+    uint8_t *data = (uint8_t*)mbuf_data(skb);
     size_t pkt_len = mbuf_len(skb);
-    size_t offset = sizeof(struct ip6_hdr);
-    uint8_t next_header = ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
-    
-    while (next_header != IPPROTO_TCP) {
-        if (offset + sizeof(struct ip6_ext) > pkt_len) {
-            return NULL;
-        }
-        struct ip6_ext* ext = (struct ip6_ext*)((uint8_t*)ip6 + offset);
-        next_header = ext->ip6e_nxt;
-        offset += (ext->ip6e_len + 1) * 8;
 
-        if (offset > pkt_len) {
+    struct ip6_hdr *ip6 = ip6_hdr(skb);
+    if (!ip6)
+        return NULL;
+
+    uint8_t next_header = ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    size_t offset = ETHER_HDR_LEN + sizeof(struct ip6_hdr);
+
+    while (offset < pkt_len && next_header != IPPROTO_TCP) {
+        if (offset + 2 > pkt_len)
+            return NULL;
+
+        uint8_t ext_nxt = *(data + offset);
+        uint8_t ext_len = *(data + offset + 1);
+
+        size_t hdr_len;
+        switch (next_header) {
+        case IPPROTO_HOPOPTS:
+        case IPPROTO_ROUTING:
+        case IPPROTO_DSTOPTS:
+            hdr_len = (ext_len + 1) * 8;
+            break;
+        case IPPROTO_FRAGMENT:
+            hdr_len = 8;
+            break;
+        case IPPROTO_AH:
+            hdr_len = (ext_len + 2) * 4;
+            break;
+        default:
             return NULL;
         }
+
+        if (offset + hdr_len > pkt_len)
+            return NULL;
+
+        next_header = ext_nxt;
+        offset += hdr_len;
     }
-    
-    if (offset + sizeof(struct tcphdr) > pkt_len) {
+
+    if (next_header != IPPROTO_TCP ||
+        offset + sizeof(struct tcphdr) > pkt_len) {
         return NULL;
     }
-    return (struct tcphdr*)((uint8_t*)ip6 + offset);
+
+    return (struct tcphdr*)(data + offset);
 }
 
 static void* kzalloc(size_t size)
@@ -1187,7 +1217,7 @@ static void igc_tx_csum(struct igc_ring *tx_ring, struct igc_tx_buffer *first,
     tx_ring->netdev->getChecksumDemand(skb, IONetworkController::kChecksumFamilyTCPIP, &checksumDemanded);
     checksumDemanded &= DEMAND_MASK;
 
-    int  ehdrlen = ETHER_HDR_LEN;
+    const int  ehdrlen = ETHER_HDR_LEN;
     if(checksumDemanded == 0){
         if (!(first->tx_flags & IGC_TX_FLAGS_VLAN))
             return;
@@ -1197,7 +1227,7 @@ static void igc_tx_csum(struct igc_ring *tx_ring, struct igc_tx_buffer *first,
         
         /* Set the ether header length */
         packet = (u8*)mbuf_data(skb) + ehdrlen;
-        size_t len = mbuf_len(skb);
+        ssize_t len = mbuf_len(skb) - ehdrlen;
 
         if(checksumDemanded & DEMAND_IPv6){        // IPv6
             struct ip6_hdr* ip6 = (struct ip6_hdr*)packet;
@@ -7424,6 +7454,11 @@ void AppleIGC::setCarrier(bool stat)
     
 void AppleIGC::receive(mbuf_t skb)
 {
+    if (!(mbuf_flags(skb) & M_PKTHDR)) {
+        this->freePacket(skb);
+        skb = NULL;
+        return;
+    }
     netif->inputPacket(skb, (UInt32)mbuf_pkthdr_len(skb), IONetworkInterface::kInputOptionQueuePacket);
     //netif->inputPacket(skb, 0, IONetworkInterface::kInputOptionQueuePacket);
 }

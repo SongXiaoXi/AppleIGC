@@ -212,6 +212,9 @@ static void netif_stop_queue(IOEthernetController* netdev)
 static mbuf_t netdev_alloc_skb_ip_align(IOEthernetController* netdev, u16 rx_buffer_len)
 {
     mbuf_t skb = netdev->allocatePacket(rx_buffer_len);
+    if (skb == NULL) {
+        return NULL;
+    }
     mbuf_pkthdr_setlen(skb, 0);
     return skb;
 }
@@ -6586,6 +6589,13 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
     struct igc_ring *tx_ring = igc_tx_queue_mapping(adapter, skb);
     mbuf_t skb = NULL;
     while ((txNumFreeDesc = igc_desc_unused(tx_ring)) >= (MAX_SKB_FRAGS + 3) && kIOReturnSuccess == interface->dequeueOutputPackets(1, &skb, NULL, NULL, NULL)) {
+        if (!(mbuf_flags(skb) & M_PKTHDR)) {
+            pr_err("outputStart: packet without M_PKTHDR, flags=0x%x, dropping\n",
+                   (unsigned)mbuf_flags(skb));
+            freePacket(skb);
+            skb = NULL;
+            continue;
+        }
         int tso = 0;
         u32 tx_flags = 0;
         u8 hdr_len = 0;
@@ -6594,6 +6604,8 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
         UInt32 frags = txMbufCursor->getPhysicalSegmentsWithCoalesce(skb, vec, MAX_SKB_FRAGS);
         if(frags == 0) {
             pr_debug("No frags by getPhysicalSegmentsWithCoalesce()\n");
+            freePacket(skb);
+            skb = NULL;
             break;
         }
         
@@ -6635,6 +6647,8 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
             netStats->outputErrors += 1;
             pr_debug("output: igb_tx_map failed (%u)\n", netStats->outputErrors);
             first->skb = NULL;
+            freePacket(skb);
+            skb = NULL;
             break;
         }
     }
@@ -6655,6 +6669,11 @@ UInt32 AppleIGC::outputPacket(mbuf_t skb, void * param)
     if (unlikely(!(enabledForNetif && linkUp) || !txMbufCursor
             || test_bit(__IGC_DOWN, &adapter->state))) {
         pr_debug("output: Dropping packet on disabled device\n");
+        goto error;
+    }
+    if (!(mbuf_flags(skb) & M_PKTHDR)) {
+        pr_err("output: packet without M_PKTHDR (flags=0x%x), dropping\n",
+               (unsigned)mbuf_flags(skb));
         goto error;
     }
     /*

@@ -6327,7 +6327,7 @@ int AppleIGC::currentMediumIndex() {
         }
 
     } else if (priv_adapter.link_speed == SPEED_100) {
-       if (priv_adapter.link_duplex != DUPLEX_FULL) {
+       if (priv_adapter.link_duplex == DUPLEX_FULL) {
            if (fcIndex == kFlowControlTypeNone) {
                if (eeeMode) {
                    return MEDIUM_INDEX_100FDEEE;
@@ -6345,7 +6345,7 @@ int AppleIGC::currentMediumIndex() {
             return MEDIUM_INDEX_100HD;
        }
     } else if (priv_adapter.link_speed == SPEED_10) {
-        if (priv_adapter.link_duplex != DUPLEX_FULL) {
+        if (priv_adapter.link_duplex == DUPLEX_FULL) {
             return MEDIUM_INDEX_10FD;
         } else {
             return MEDIUM_INDEX_10HD;
@@ -6451,7 +6451,7 @@ void AppleIGC::setLinkUp() {
        mediumSpeed = kSpeed100MBit;
        speedName = speed100MName;
 
-       if (priv_adapter.link_duplex != DUPLEX_FULL) {
+       if (priv_adapter.link_duplex == DUPLEX_FULL) {
            duplexName = duplexFullName;
 
            eeeMode = intelSupportsEEE(adapter);
@@ -6479,7 +6479,7 @@ void AppleIGC::setLinkUp() {
        mediumSpeed = kSpeed10MBit;
        speedName = speed10MName;
 
-       if (priv_adapter.link_duplex != DUPLEX_FULL) {
+       if (priv_adapter.link_duplex == DUPLEX_FULL) {
            mediumIndex = MEDIUM_INDEX_10FD;
            duplexName = duplexFullName;
        } else {

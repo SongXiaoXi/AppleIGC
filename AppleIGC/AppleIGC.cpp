@@ -505,7 +505,7 @@ void igc_free_tx_resources(struct igc_ring *tx_ring)
 {
     igc_clean_tx_ring(tx_ring);
 
-    vfree(tx_ring->tx_buffer_info, sizeof(struct igc_rx_buffer) * tx_ring->count);
+    vfree(tx_ring->tx_buffer_info, sizeof(struct igc_tx_buffer) * tx_ring->count);
     tx_ring->tx_buffer_info = NULL;
 
     /* if not set, then don't free */

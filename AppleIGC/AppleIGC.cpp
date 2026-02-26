@@ -1967,7 +1967,7 @@ static unsigned int igc_get_rx_frame_truesize(struct igc_ring *ring,
  *
  * This function will add the data contained in rx_buffer->page to the skb.
  */
-static void igc_add_rx_frag(struct igc_ring *rx_ring,
+static bool igc_add_rx_frag(struct igc_ring *rx_ring,
                 struct igc_rx_buffer *rx_buffer,
                 struct sk_buff *skb,
                 unsigned int size)
@@ -1979,8 +1979,11 @@ static void igc_add_rx_frag(struct igc_ring *rx_ring,
     size_t orig_len = mbuf_pkthdr_len(skb);
     if (unlikely(mbuf_copyback(skb, orig_len, size,
                       va, MBUF_WAITOK))) {
-        pr_err("Unexpected mbuf_copyback()\n");
+        pr_err("mbuf_copyback failed: orig_len=%lu size=%u, dropping frame\n",
+               (unsigned long)orig_len, size);
+        return false;
     }
+    return true;
 #else
     unsigned int truesize;
 
@@ -1995,6 +1998,7 @@ static void igc_add_rx_frag(struct igc_ring *rx_ring,
             rx_buffer->page_offset, size, truesize);
 
     igc_rx_buffer_flip(rx_buffer, truesize);
+    return true;
 #endif
 }
 
@@ -2458,7 +2462,11 @@ static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
 #endif
 
     /* pull page into skb */
-    igc_add_rx_frag(rx_ring, rx_buffer, skb, size);
+    if (!igc_add_rx_frag(rx_ring, rx_buffer, skb, size)) {
+        /* mbuf_copyback failed - drop the entire frame */
+        rx_ring->netdev->freePacket(skb);
+        skb = NULL;
+    }
     igc_reuse_rx_page(rx_ring, rx_buffer);
 
     /* clear contents of rx_buffer */
@@ -2502,17 +2510,20 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
 
         skb = igc_fetch_rx_buffer(rx_ring, rx_desc, skb, size);
 
-        /* exit if we failed to retrieve a buffer */
-        if (!skb) {
-            rx_ring->rx_stats.alloc_failed++;
-            break;
-        }
-        
         cleaned_count++;
 
         /* fetch next buffer in frame if non-eop */
-        if (igc_is_non_eop(rx_ring, rx_desc))
+        if (igc_is_non_eop(rx_ring, rx_desc)) {
+            /* If skb is NULL (alloc or copyback failed), keep draining
+             * the remaining fragments to maintain ring consistency */
             continue;
+        }
+
+        /* If we failed to retrieve a buffer, skip this frame */
+        if (!skb) {
+            rx_ring->rx_stats.alloc_failed++;
+            continue;
+        }
 
         /* verify the packet layout is correct */
         if (igc_cleanup_headers(rx_ring, rx_desc, skb)) {

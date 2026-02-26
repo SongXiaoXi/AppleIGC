@@ -7020,7 +7020,7 @@ bool AppleIGC::createWorkLoop()
     if ((vm_address_t) workLoop >> 1)
      return true;
 
-    if (OSCompareAndSwap(0, 1, (UInt32 *) &workLoop)) {
+    if (OSCompareAndSwapPtr((void *)0, (void *)1, (void **) &workLoop)) {
         // Construct the workloop and set the cntrlSync variable
         // to whatever the result is and return
         workLoop = IOWorkLoop::workLoop();

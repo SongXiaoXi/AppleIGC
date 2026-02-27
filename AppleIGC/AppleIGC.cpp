@@ -6566,8 +6566,9 @@ void AppleIGC::systemWillShutdown(IOOptionBits specifier)
     super::systemWillShutdown(specifier);
 }
 
-/** This method doesn't completely shutdown NIC. It intentionally keeps eventSources
- * and enables interruptes back
+/** This method shuts down TX/RX but keeps the ability to detect link-up
+ * via LSC interrupts. __IGC_DOWN remains set to prevent igc_poll
+ * from operating on empty rings.
  */
 void AppleIGC::setLinkDown()
 {
@@ -6580,14 +6581,15 @@ void AppleIGC::setLinkDown()
     netif->flushOutputQueue();
 
     linkUp = false;
-    /** igb_down also performs setLinkStatus(Valid) via netif_carrier_off */
+    /** igc_down also performs setLinkStatus(Valid) via netif_carrier_off */
     igc_down(adapter);
 
-    clear_bit(__IGC_DOWN, &adapter->state);
-
-    /* Clear any pending interrupts. */
+    /* Keep __IGC_DOWN set to prevent igc_poll on empty rings.
+     * Only enable link-status-change interrupts for link detection.
+     */
     igc_rd32(hw, IGC_ICR);
-    igc_irq_enable(adapter);
+    wr32(IGC_IMS, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
+    wr32(IGC_IAM, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
 
     pr_debug("Link down on en%u\n", netif->getUnitNumber());
     pr_debug("setLinkDown() <===\n");
@@ -7171,35 +7173,17 @@ void AppleIGC::checkLinkStatus()
     pr_debug("checkLinkStatus() ===> link=%u, carrier=%u, linkUp=%u\n",
              link, carrier(), linkUp);
 
-    if (adapter->flags & IGC_FLAG_NEED_LINK_UPDATE) {
-        if (time_after(jiffies, (adapter->link_check_timeout + HZ)))
-            adapter->flags &= ~IGC_FLAG_NEED_LINK_UPDATE;
-        else {
-            pr_debug("Force link down due to IGC_FLAG_NEED_LINK_UPDATE\n");
-            link = FALSE;
+    if (link) {
+        if (!linkUp) {
+            /* Link just came up - configure and bring interface up */
+            setLinkUp();
         }
-    }
-
-    if (linkUp) {
-        if (link) {
-            /* The link partner must have changed some setting. Initiate renegotiation
-             * of the link parameters to make sure that the MAC is programmed correctly.
-             */
-            watchdogSource->cancelTimeout();
-            igc_update_stats(&priv_adapter);
-            intelRestart();
-        } else {
-            /* Stop watchdog and statistics updates. */
-            watchdogSource->cancelTimeout();
+        /* else: stable link, nothing to do - do NOT restart */
+    } else {
+        if (linkUp) {
+            /* Link just went down */
             setLinkDown();
         }
-    } else {
-        if (link) {
-            /* Start rx/tx and inform upper layers that the link is up now. */
-            setLinkUp();
-            /* Perform live checks periodically. */
-            watchdogSource->setTimeoutMS(200);
-       }
     }
     pr_debug("checkLinkStatus() <===\n");
 }
@@ -7234,14 +7218,22 @@ void AppleIGC::interruptOccurred(IOInterruptEventSource * src, int count)
         /* HW is reporting DMA is out of sync */
         adapter->stats.doosync++;
     }
+
     if (unlikely(icr & (IGC_ICR_RXSEQ | IGC_ICR_LSC))) {
-        checkLinkStatus();
-//
-//        /* guard against interrupt when we're going down */
-//        if (!test_bit(__IGB_DOWN, &adapter->state))
-//            watchdogSource->setTimeoutMS(1);
-    } else {
+        hw->mac.get_link_status = true;
+        /* Defer link status check to watchdog - don't do heavy
+         * igc_down/igc_up work directly in the interrupt handler.
+         * This matches the Linux igc_intr() pattern.
+         */
+        watchdogSource->setTimeoutMS(1);
+    }
+
+    if (!test_bit(__IGC_DOWN, &adapter->state)) {
         igc_poll(q_vector, 64);
+    } else {
+        /* When down, re-enable only LSC interrupts
+         * (IMS was auto-cleared by ICR read via IAM) */
+        wr32(IGC_IMS, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
     }
     
     wr32(IGC_EIMS, adapter->eims_other);
@@ -7261,6 +7253,17 @@ void AppleIGC::watchdogTask()
     struct igc_hw *hw = &adapter->hw;
     int i;
 
+
+    /* Always check link status - this is how we detect link-up after
+     * setLinkDown or resume. checkLinkStatus will call setLinkUp/
+     * setLinkDown as needed, which manages __IGC_DOWN state.
+     */
+    checkLinkStatus();
+
+    /* Skip hardware operations when adapter is down */
+    if (test_bit(__IGC_DOWN, &adapter->state))
+        return;
+
     igc_update_stats(adapter);
 
     for (i = 0; i < adapter->num_tx_queues; i++) {
@@ -7271,32 +7274,19 @@ void AppleIGC::watchdogTask()
     }
 
     /* Cause software interrupt to ensure rx ring is cleaned */
-    /*if (adapter->msix_entries) {
-        u32 eics = 0;
-
-        for (i = 0; i < adapter->num_q_vectors; i++)
-            eics |= adapter->q_vector[i]->eims_value;
-        wr32(IGC_EICS, eics);
-    } else {*/
-        wr32(IGC_ICS, IGC_ICS_RXDMT0);
-    //}
-
-    /* Reset the timer */
-    if (!test_bit(__IGC_DOWN, &adapter->state)){
-        if (adapter->flags & IGC_FLAG_NEED_LINK_UPDATE) {
-            pr_debug("watchdogTask(): adapter has IGB_FLAG_NEED_LINK_UPDATE, forcing restart.\n");
-            intelRestart();
-        }
-    }
-
-    watchdogSource->setTimeoutMS(200);
+    wr32(IGC_ICS, IGC_ICS_RXDMT0);
 }
     
 void AppleIGC::watchdogHandler(OSObject * target, IOTimerEventSource * src)
 {
     AppleIGC* me = (AppleIGC*) target;
     me->watchdogTask();
-    me->watchdogSource->setTimeoutMS(1000);
+    /* Re-arm timer: 2s when link is up (stats/health check),
+     * 500ms when link is down (faster link-up detection) */
+    if (me->linkUp)
+        me->watchdogSource->setTimeoutMS(2000);
+    else
+        me->watchdogSource->setTimeoutMS(500);
 }
     
 void AppleIGC::resetHandler(OSObject * target, IOTimerEventSource * src)

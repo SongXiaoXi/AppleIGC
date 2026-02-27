@@ -6599,8 +6599,14 @@ void AppleIGC::setLinkDown()
 IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits options)
 {
     struct igc_adapter *adapter = &priv_adapter;
-    struct igc_ring *tx_ring = igc_tx_queue_mapping(adapter, skb);
+
+    /* Safety: don't transmit if interface is down or link is not up */
+    if (!enabledForNetif || !linkUp || test_bit(__IGC_DOWN, &adapter->state)) {
+        return kIOReturnNotReady;
+    }
+
     mbuf_t skb = NULL;
+    struct igc_ring *tx_ring = igc_tx_queue_mapping(adapter, skb);
     while ((txNumFreeDesc = igc_desc_unused(tx_ring)) >= (MAX_SKB_FRAGS + 3) && kIOReturnSuccess == interface->dequeueOutputPackets(1, &skb, NULL, NULL, NULL)) {
         if (!(mbuf_flags(skb) & M_PKTHDR)) {
             pr_err("outputStart: packet without M_PKTHDR, flags=0x%x, dropping\n",

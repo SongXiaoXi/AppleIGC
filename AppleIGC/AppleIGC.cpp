@@ -7322,6 +7322,8 @@ IOReturn AppleIGC::registerWithPolicyMaker ( IOService * policyMaker )
 IOReturn AppleIGC::setPowerState( unsigned long powerStateOrdinal,
                                 IOService *policyMaker )
 {
+    struct igc_hw *hw = &priv_adapter.hw;
+
     pr_err("setPowerState(%d)\n",(int)powerStateOrdinal);
     if (powerState == powerStateOrdinal)
         return IOPMAckImplied;
@@ -7329,12 +7331,29 @@ IOReturn AppleIGC::setPowerState( unsigned long powerStateOrdinal,
 
     if(powerStateOrdinal == 0){ // SUSPEND/SHUTDOWN
         pr_err("suspend start.\n");
-        
+        if (enabledForNetif) {
+            netif->stopOutputThread();
+            netif->flushOutputQueue();
+            linkUp = false;
+            setCarrier(false);
+            watchdogSource->cancelTimeout();
+            igc_down(&priv_adapter);
+            igc_irq_disable(&priv_adapter);
+        }
         pr_err("suspend end.\n");
         bSuspended = TRUE;
     } else if(bSuspended) { // WAKE
         pr_err("resume start.\n");
-        
+        if (enabledForNetif) {
+            igc_reset(&priv_adapter);
+            /* Keep __IGC_DOWN set, only enable LSC for link detection */
+            igc_rd32(&priv_adapter.hw, IGC_ICR);
+            wr32(IGC_IMS, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
+            wr32(IGC_IAM, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
+            priv_adapter.hw.mac.get_link_status = true;
+            /* Start periodic link check to detect link-up after wake */
+            watchdogSource->setTimeoutMS(500);
+        }
         pr_err("resume end.\n");
         bSuspended = FALSE;
     }

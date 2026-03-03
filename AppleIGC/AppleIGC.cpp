@@ -6584,12 +6584,23 @@ void AppleIGC::setLinkDown()
     /** igc_down also performs setLinkStatus(Valid) via netif_carrier_off */
     igc_down(adapter);
 
+    /* igc_down() calls setTimers(FALSE) which disables watchdogSource.
+     * We must re-enable it so that LSC interrupts can schedule
+     * watchdogTask -> checkLinkStatus -> setLinkUp when cable is
+     * plugged back in.
+     */
+    if (watchdogSource)
+        watchdogSource->enable();
+
     /* Keep __IGC_DOWN set to prevent igc_poll on empty rings.
      * Only enable link-status-change interrupts for link detection.
      */
     igc_rd32(hw, IGC_ICR);
     wr32(IGC_IMS, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
     wr32(IGC_IAM, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);
+
+    /* Start periodic link check as backup in case LSC interrupt is missed */
+    watchdogSource->setTimeoutMS(500);
 
     pr_debug("Link down on en%u\n", netif->getUnitNumber());
     pr_debug("setLinkDown() <===\n");
@@ -7346,6 +7357,9 @@ IOReturn AppleIGC::setPowerState( unsigned long powerStateOrdinal,
         pr_err("resume start.\n");
         if (enabledForNetif) {
             igc_reset(&priv_adapter);
+            /* Re-enable watchdog (disabled by igc_down during suspend) */
+            if (watchdogSource)
+                watchdogSource->enable();
             /* Keep __IGC_DOWN set, only enable LSC for link detection */
             igc_rd32(&priv_adapter.hw, IGC_ICR);
             wr32(IGC_IMS, IGC_IMS_LSC | IGC_IMS_RXSEQ | IGC_IMS_DRSTA);

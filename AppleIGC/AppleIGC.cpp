@@ -6631,9 +6631,9 @@ IOReturn AppleIGC::outputStart(IONetworkInterface *interface, IOOptionBits optio
         u8 hdr_len = 0;
         
         struct IOPhysicalSegment vec[MAX_SKB_FRAGS];
-        UInt32 frags = txMbufCursor->getPhysicalSegmentsWithCoalesce(skb, vec, MAX_SKB_FRAGS);
+        UInt32 frags = txMbufCursor->getPhysicalSegments(skb, vec, MAX_SKB_FRAGS);
         if(frags == 0) {
-            pr_debug("No frags by getPhysicalSegmentsWithCoalesce()\n");
+            pr_debug("No frags by getPhysicalSegments()\n");
             freePacket(skb);
             skb = NULL;
             break;
@@ -6720,9 +6720,9 @@ UInt32 AppleIGC::outputPacket(mbuf_t skb, void * param)
         u8 hdr_len = 0;
         
         struct IOPhysicalSegment vec[MAX_SKB_FRAGS];
-        UInt32 frags = tx_ring->netdev->txCursor()->getPhysicalSegmentsWithCoalesce(skb, vec, MAX_SKB_FRAGS);
+        UInt32 frags = tx_ring->netdev->txCursor()->getPhysicalSegments(skb, vec, MAX_SKB_FRAGS);
         if(frags == 0) {
-            pr_debug("No frags by getPhysicalSegmentsWithCoalesce()\n");
+            pr_debug("No frags by getPhysicalSegments()\n");
             goto error;
         }
         

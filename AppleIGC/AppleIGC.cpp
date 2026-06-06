@@ -6859,122 +6859,94 @@ done:
 */
 void AppleIGC::intelSetupAdvForMedium(const IONetworkMedium *medium)
 {
-        struct igc_adapter *adapter = &priv_adapter;
-        struct igc_hw *hw = &adapter->hw;
+    struct igc_adapter *adapter = &priv_adapter;
+    struct igc_hw *hw = &adapter->hw;
+    UInt32 mediumIndex = medium->getIndex();
 
-        pr_debug("intelSetupAdvForMedium(index %u, type %u) ===>\n", medium->getIndex(), type);
+    pr_debug("intelSetupAdvForMedium(index %u) ===>\n", mediumIndex);
 
-        hw->mac.autoneg = 0;
+    hw->mac.autoneg = true;
+    hw->dev_spec._base.eee_enable = false;
 
-        if (intelSupportsEEE(adapter))
-            hw->dev_spec._base.eee_enable = false;
+    switch (mediumIndex) {
+        case MEDIUM_INDEX_10HD:
+            hw->phy.autoneg_advertised = ADVERTISE_10_HALF;
+            hw->fc.requested_mode = igc_fc_none;
+            break;
 
-        switch (medium->getIndex()) {
-                /*
-            case MEDIUM_INDEX_10HD:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_10FD:
+            hw->phy.autoneg_advertised = ADVERTISE_10_FULL;
+            hw->fc.requested_mode = igc_fc_none;
+            break;
 
-            case MEDIUM_INDEX_10FD:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_100HD:
+            hw->phy.autoneg_advertised = ADVERTISE_100_HALF;
+            hw->fc.requested_mode = igc_fc_none;
+            break;
 
-            case MEDIUM_INDEX_100HD:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_100FD:
+            hw->phy.autoneg_advertised = ADVERTISE_100_FULL;
+            hw->fc.requested_mode = igc_fc_none;
+            break;
 
-            case MEDIUM_INDEX_100FD:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_100FDFC:
+            hw->phy.autoneg_advertised = ADVERTISE_100_FULL;
+            hw->fc.requested_mode = igc_fc_full;
+            break;
 
-            case MEDIUM_INDEX_100FDFC:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_full;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_1000FD:
+        case MEDIUM_INDEX_1000FDEEE:
+            hw->phy.autoneg_advertised = ADVERTISE_1000_FULL;
+            hw->fc.requested_mode = igc_fc_none;
+            hw->dev_spec._base.eee_enable = (mediumIndex == MEDIUM_INDEX_1000FDEEE);
+            break;
 
-            case MEDIUM_INDEX_1000FD:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_1000FDFC:
+        case MEDIUM_INDEX_1000FDFCEEE:
+            hw->phy.autoneg_advertised = ADVERTISE_1000_FULL;
+            hw->fc.requested_mode = igc_fc_full;
+            hw->dev_spec._base.eee_enable = (mediumIndex == MEDIUM_INDEX_1000FDFCEEE);
+            break;
 
-            case MEDIUM_INDEX_1000FDFC:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_full;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_100FDEEE:
+            hw->phy.autoneg_advertised = ADVERTISE_100_FULL;
+            hw->fc.requested_mode = igc_fc_none;
+            hw->dev_spec._base.eee_enable = true;
+            break;
 
-            case MEDIUM_INDEX_1000FDEEE:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = true;
-                break;
+        case MEDIUM_INDEX_100FDFCEEE:
+            hw->phy.autoneg_advertised = ADVERTISE_100_FULL;
+            hw->fc.requested_mode = igc_fc_full;
+            hw->dev_spec._base.eee_enable = true;
+            break;
 
-            case MEDIUM_INDEX_1000FDFCEEE:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_full;
-                hw->dev_spec._base.eee_enable = true;
-                break;
+        case MEDIUM_INDEX_2500FD:
+        case MEDIUM_INDEX_2500FDEEE:
+            hw->phy.autoneg_advertised = ADVERTISE_2500_FULL;
+            hw->fc.requested_mode = igc_fc_none;
+            hw->dev_spec._base.eee_enable = (mediumIndex == MEDIUM_INDEX_2500FDEEE);
+            break;
 
-            case MEDIUM_INDEX_100FDEEE:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = true;
-                break;
+        case MEDIUM_INDEX_2500FDFC:
+        case MEDIUM_INDEX_2500FDFCEEE:
+            hw->phy.autoneg_advertised = ADVERTISE_2500_FULL;
+            hw->fc.requested_mode = igc_fc_full;
+            hw->dev_spec._base.eee_enable = (mediumIndex == MEDIUM_INDEX_2500FDFCEEE);
+            break;
 
-            case MEDIUM_INDEX_100FDFCEEE:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_full;
-                hw->dev_spec._base.eee_enable = true;
-                break;
-            case MEDIUM_INDEX_2500FD:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = false;
-                break;
-            case MEDIUM_INDEX_2500FDFC:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_full;
-                hw->dev_spec._base.eee_enable = false;
-                break;
+        case MEDIUM_INDEX_AUTO:
+        default:
+            hw->phy.autoneg_advertised = AUTONEG_ADVERTISE_SPEED_DEFAULT_2500;
+            if (adapter->fc_autoneg)
+                hw->fc.requested_mode = igc_fc_default;
+            hw->dev_spec._base.eee_enable = intelSupportsEEE(adapter);
+            break;
+    }
 
-            case MEDIUM_INDEX_2500FDEEE:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_none;
-                hw->dev_spec._base.eee_enable = true;
-                break;
+    /* clear MDI, MDI(-X) override is only allowed when autoneg enabled */
+    hw->phy.mdix = AUTO_ALL_MODES;
 
-            case MEDIUM_INDEX_2500FDFCEEE:
-                hw->mac.autoneg = 0;
-                hw->fc.requested_mode = igc_fc_full;
-                hw->dev_spec._base.eee_enable = true;
-                break;
-                */
-            default:
-                pr_err("Force mode currently not supported\n");
-            case MEDIUM_INDEX_AUTO:
-                if (adapter->fc_autoneg)
-                        hw->fc.requested_mode = igc_fc_default;
-
-                if (intelSupportsEEE(adapter))
-                    hw->dev_spec._base.eee_enable = true;
-
-                hw->mac.autoneg = 1;
-                break;
-        }
-        /* clear MDI, MDI(-X) override is only allowed when autoneg enabled */
-        hw->phy.mdix = AUTO_ALL_MODES;
-
-        pr_debug("intelSetupAdvForMedium() <===\n");
+    pr_debug("intelSetupAdvForMedium(advertise 0x%x) <===\n", hw->phy.autoneg_advertised);
 }
 
 void AppleIGC::intelRestart() {
@@ -7016,12 +6988,11 @@ void AppleIGC::intelRestart() {
 
 IOReturn AppleIGC::selectMedium(const IONetworkMedium * medium)
 {
-    // force mode is not supported
-    return kIOReturnUnsupported;
     pr_err("selectMedium()===>\n");
 
     if (medium) {
         intelSetupAdvForMedium(medium);
+        setSelectedMedium(medium);
         setCurrentMedium(medium);
 
         igc_update_stats(&priv_adapter);

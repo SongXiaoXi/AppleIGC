@@ -1,7 +1,7 @@
 #ifndef __APPLE_IGC_H__
 #define __APPLE_IGC_H__
 
-#define MBit 1000000
+#define MBit 1000000U
 
 enum {
     eePowerStateOff = 0,

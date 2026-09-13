@@ -7575,6 +7575,8 @@ bool AppleIGC::setupMediumDict()
 bool AppleIGC::initEventSources( IOService* provider )
 {
     bool result = false;
+    int interruptIndex = 0;
+    int interruptType = 0;
 
     pr_debug("initEventSources() ===>\n");
 
@@ -7599,7 +7601,27 @@ bool AppleIGC::initEventSources( IOService* provider )
     }
     transmitQueue->retain();
 #endif
-    interruptSource = IOInterruptEventSource::interruptEventSource(this,&AppleIGC::interruptHandler,provider);
+    /*
+     * PCI devices commonly expose a legacy INTx source followed by one or
+     * more message-signaled (MSI/MSI-X) sources.  Source 0 is the legacy
+     * line on this I225-V; select the first PCI-messaged source instead.
+     * Apple recommends passing the selected source to the event source.
+     */
+    for (int index = 0; ; index++) {
+        IOReturn typeResult = provider->getInterruptType(index, &interruptType);
+        if (typeResult != kIOReturnSuccess)
+            break;
+        if (interruptType & kIOInterruptTypePCIMessaged) {
+            interruptIndex = index;
+            break;
+        }
+    }
+    if (interruptIndex != 0)
+        pr_debug("Using PCI messaged interrupt source %d (type=0x%x)\n", interruptIndex, interruptType);
+    else
+        pr_debug("No PCI messaged interrupt source found; using source 0 (type=0x%x)\n", interruptType);
+
+    interruptSource = IOInterruptEventSource::interruptEventSource(this,&AppleIGC::interruptHandler,provider,interruptIndex);
     if (!interruptSource) {
         pr_err("MSI interrupt could not be enabled.\n");
         goto error1;

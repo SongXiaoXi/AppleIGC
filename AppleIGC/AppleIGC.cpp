@@ -5822,6 +5822,7 @@ bool AppleIGC::init(OSDictionary *properties) {
         return false;
     enabledForNetif = false;
     workLoop = NULL;
+    usingMsi = false;
 
     pdev = NULL;
     mediumDict = NULL;
@@ -7192,9 +7193,9 @@ void AppleIGC::interruptOccurred(IOInterruptEventSource * src, int count)
         return;
     }
 
-    /* IMS will not auto-mask if INT_ASSERTED is not set, and if it is
-     * not set, then the adapter didn't send an interrupt */
-    if (!(icr & IGC_ICR_INT_ASSERTED)) {
+    /* INT_ASSERTED identifies interrupts on the shared legacy line.  MSI
+     * delivery already identifies the source, so this bit is not required. */
+    if (!usingMsi && !(icr & IGC_ICR_INT_ASSERTED)) {
         return;
     }
     igc_write_itr(q_vector);
@@ -7613,6 +7614,7 @@ bool AppleIGC::initEventSources( IOService* provider )
             break;
         if (interruptType & kIOInterruptTypePCIMessaged) {
             interruptIndex = index;
+            usingMsi = true;
             break;
         }
     }

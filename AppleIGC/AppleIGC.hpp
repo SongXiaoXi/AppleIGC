@@ -145,6 +145,7 @@ private:
     bool enabledForNetif;
     bool bSuspended;
     bool useTSO;
+    bool usingMsi;
 
     bool linkUp;
 #ifdef __PRIVATE_SPI__

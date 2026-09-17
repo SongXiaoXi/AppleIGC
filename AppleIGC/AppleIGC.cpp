@@ -634,6 +634,7 @@ static void igc_clean_rx_ring_page_shared(struct igc_ring *rx_ring)
     dev_kfree_skb(rx_ring->skb);
 #endif
     rx_ring->skb = NULL;
+    rx_ring->rx_discarding = false;
 
     /* Free all the Rx ring sk_buffs */
     while (i != rx_ring->next_to_alloc) {
@@ -2466,11 +2467,8 @@ static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
         /* mbuf_copyback failed - drop the entire frame */
         rx_ring->netdev->freePacket(skb);
         skb = NULL;
+        rx_ring->rx_discarding = true;
     }
-    igc_reuse_rx_page(rx_ring, rx_buffer);
-
-    /* clear contents of rx_buffer */
-    rx_buffer->page = NULL;
 
     return skb;
 }
@@ -2508,19 +2506,29 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
          */
         dma_rmb();
 
-        skb = igc_fetch_rx_buffer(rx_ring, rx_desc, skb, size);
+        if (!rx_ring->rx_discarding) {
+            skb = igc_fetch_rx_buffer(rx_ring, rx_desc, skb, size);
+            /* Allocation failed before consuming this descriptor. Leave it
+             * and its page untouched so the next poll can retry. */
+            if (!skb && !rx_ring->rx_discarding)
+                break;
+        }
+
+        struct igc_rx_buffer *rx_buffer = &rx_ring->rx_buffer_info[rx_ring->next_to_clean];
+        igc_reuse_rx_page(rx_ring, rx_buffer);
+        rx_buffer->page = NULL;
 
         cleaned_count++;
 
         /* fetch next buffer in frame if non-eop */
         if (igc_is_non_eop(rx_ring, rx_desc)) {
-            /* If skb is NULL (alloc or copyback failed), keep draining
-             * the remaining fragments to maintain ring consistency */
             continue;
         }
 
-        /* If we failed to retrieve a buffer, skip this frame */
-        if (!skb) {
+        /* A copy failure discards every remaining fragment through EOP,
+         * including when the frame spans polls or wraps around the ring. */
+        if (rx_ring->rx_discarding) {
+            rx_ring->rx_discarding = false;
             rx_ring->rx_stats.alloc_failed++;
             continue;
         }

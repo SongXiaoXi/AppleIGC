@@ -155,6 +155,7 @@ struct igc_ring {
             struct igc_rx_packet_stats pkt_stats;
             struct u64_stats_sync rx_syncp;
             struct sk_buff *skb;
+            bool rx_discarding; /* discard the failed frame through EOP */
         };
     };
 

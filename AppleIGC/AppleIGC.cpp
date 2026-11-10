@@ -211,11 +211,27 @@ static void netif_stop_queue(IOEthernetController* netdev)
 
 static mbuf_t netdev_alloc_skb_ip_align(IOEthernetController* netdev, u16 rx_buffer_len)
 {
-    mbuf_t skb = netdev->allocatePacket(rx_buffer_len);
+    /* Always hand the stack a single cluster mbuf. A 256-byte request
+     * (IGC_RX_HDR_LEN) yields a plain mbuf without a cluster on kernels
+     * where MHLEN is 288, so mbuf_copyback() in igc_add_rx_frag() has to
+     * chain extra mbufs for every frame larger than that. Sizing the
+     * request to the maximum frame keeps each received frame in one mbuf.
+     */
+    struct igc_adapter *adapter = netdev_priv(netdev);
+    u32 alloc_len = adapter->max_frame_size;
+
+    if (alloc_len < 2048)
+        alloc_len = 2048;
+
+    mbuf_t skb = netdev->allocatePacket(alloc_len);
     if (skb == NULL) {
         return NULL;
     }
+    /* allocatePacket() sets both lengths to the requested size; start
+     * empty so mbuf_copyback() grows m_len together with the packet length.
+     */
     mbuf_pkthdr_setlen(skb, 0);
+    mbuf_setlen(skb, 0);
     return skb;
 }
 

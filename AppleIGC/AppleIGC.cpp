@@ -209,12 +209,13 @@ static void netif_stop_queue(IOEthernetController* netdev)
 }
 
 
-static mbuf_t netdev_alloc_skb_ip_align(IOEthernetController* netdev, u16 rx_buffer_len)
+static mbuf_t netdev_alloc_skb_ip_align(IOEthernetController* netdev, UInt32 rx_buffer_len)
 {
     mbuf_t skb = netdev->allocatePacket(rx_buffer_len);
     if (skb == NULL) {
         return NULL;
     }
+    mbuf_setlen(skb, 0);
     mbuf_pkthdr_setlen(skb, 0);
     return skb;
 }
@@ -1968,7 +1969,7 @@ static unsigned int igc_get_rx_frame_truesize(struct igc_ring *ring,
  *
  * This function will add the data contained in rx_buffer->page to the skb.
  */
-static bool igc_add_rx_frag(struct igc_ring *rx_ring,
+static void igc_add_rx_frag(struct igc_ring *rx_ring,
                 struct igc_rx_buffer *rx_buffer,
                 struct sk_buff *skb,
                 unsigned int size)
@@ -1977,14 +1978,10 @@ static bool igc_add_rx_frag(struct igc_ring *rx_ring,
     IOBufferMemoryDescriptor *page = rx_buffer->page;
 
     unsigned char *va = (u8*)page->getBytesNoCopy() + rx_buffer->page_offset;
-    size_t orig_len = mbuf_pkthdr_len(skb);
-    if (unlikely(mbuf_copyback(skb, orig_len, size,
-                      va, MBUF_WAITOK))) {
-        pr_err("mbuf_copyback failed: orig_len=%lu size=%u, dropping frame\n",
-               (unsigned long)orig_len, size);
-        return false;
-    }
-    return true;
+    const size_t offset = mbuf_len(skb);
+    memcpy((u8 *)mbuf_data(skb) + offset, va, size);
+    mbuf_setlen(skb, offset + size);
+    mbuf_pkthdr_setlen(skb, offset + size);
 #else
     unsigned int truesize;
 
@@ -1999,7 +1996,6 @@ static bool igc_add_rx_frag(struct igc_ring *rx_ring,
             rx_buffer->page_offset, size, truesize);
 
     igc_rx_buffer_flip(rx_buffer, truesize);
-    return true;
 #endif
 }
 
@@ -2411,6 +2407,33 @@ static void igc_update_rx_stats(struct igc_q_vector *q_vector,
     q_vector->rx.total_bytes += bytes;
 }
 
+/*
+ * Inspect posted RX descriptors without consuming them.
+ * A zero length means DMA has not completed that descriptor yet.
+ */
+static UInt32 igc_rx_frame_size(struct igc_ring *rx_ring)
+{
+    u16 i = rx_ring->next_to_clean;
+    const u16 end = rx_ring->next_to_use;
+    UInt32 frame_size = 0;
+
+    while (i != end) {
+        union igc_adv_rx_desc *desc = IGC_RX_DESC(rx_ring, i);
+        const unsigned int size = le16_to_cpu(desc->wb.upper.length);
+        if (size == 0)
+            return 0;
+
+        dma_rmb();
+        frame_size += size;
+        if (igc_test_staterr(desc, IGC_RXD_STAT_EOP))
+            return frame_size;
+
+        if (++i == rx_ring->count)
+            i = 0;
+    }
+    return 0;
+}
+
 static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
                                               union igc_adv_rx_desc *rx_desc,
                                               struct sk_buff *skb, unsigned int size) {
@@ -2437,11 +2460,22 @@ static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
         prefetch(page_addr + L1_CACHE_BYTES);
 #endif
         
-        /* allocate a skb to store the frags */
-        skb = netdev_alloc_skb_ip_align(rx_ring->netdev,
-                                        IGC_RX_HDR_LEN);
+        UInt32 frame_size = size;
+        if (!igc_test_staterr(rx_desc, IGC_RXD_STAT_EOP)) {
+            frame_size = igc_rx_frame_size(rx_ring);
+            if (frame_size == 0)
+                return NULL;
+        }
+
+        /* Allocate once, after the complete frame length is known. */
+        skb = netdev_alloc_skb_ip_align(rx_ring->netdev, frame_size);
         if (unlikely(!skb)) {
             rx_ring->rx_stats.alloc_failed++;
+            return NULL;
+        }
+        if (mbuf_next(skb) != NULL) {
+            rx_ring->netdev->freePacket(skb);
+            rx_ring->rx_discarding = true;
             return NULL;
         }
         /*
@@ -2463,12 +2497,7 @@ static struct sk_buff *igc_fetch_rx_buffer(struct igc_ring *rx_ring,
 #endif
 
     /* pull page into skb */
-    if (!igc_add_rx_frag(rx_ring, rx_buffer, skb, size)) {
-        /* mbuf_copyback failed - drop the entire frame */
-        rx_ring->netdev->freePacket(skb);
-        skb = NULL;
-        rx_ring->rx_discarding = true;
-    }
+    igc_add_rx_frag(rx_ring, rx_buffer, skb, size);
 
     return skb;
 }
@@ -2508,8 +2537,8 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
 
         if (!rx_ring->rx_discarding) {
             skb = igc_fetch_rx_buffer(rx_ring, rx_desc, skb, size);
-            /* Allocation failed before consuming this descriptor. Leave it
-             * and its page untouched so the next poll can retry. */
+            /* Incomplete frame or allocation failure: retain the
+             * descriptors and DMA pages for the next poll. */
             if (!skb && !rx_ring->rx_discarding)
                 break;
         }
@@ -2525,8 +2554,7 @@ static int igc_clean_rx_irq(struct igc_q_vector *q_vector, const int budget)
             continue;
         }
 
-        /* A copy failure discards every remaining fragment through EOP,
-         * including when the frame spans polls or wraps around the ring. */
+        /* Discard a frame whose allocation was not a single mbuf. */
         if (rx_ring->rx_discarding) {
             rx_ring->rx_discarding = false;
             rx_ring->rx_stats.alloc_failed++;
